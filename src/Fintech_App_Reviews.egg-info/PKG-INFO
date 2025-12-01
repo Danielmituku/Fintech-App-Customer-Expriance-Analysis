@@ -1,3 +1,27 @@
+Metadata-Version: 2.4
+Name: Fintech_App_Reviews
+Version: 0.1.0
+Summary: End-to-end pipeline for fintech app review analytics.
+Author-email: "Tibebu K." <wise.tibec@gmail.com>
+License: MIT
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: pyyaml~=6.0.1
+Requires-Dist: python-dateutil~=2.8.2
+Requires-Dist: google-play-scraper
+Requires-Dist: sqlalchemy
+Requires-Dist: psycopg2-binary
+Requires-Dist: alembic
+Requires-Dist: nltk
+Requires-Dist: spacy
+Requires-Dist: matplotlib
+Requires-Dist: seaborn
+Requires-Dist: plotly
+Requires-Dist: reportlab
+Requires-Dist: python-dotenv
+
 # Fintech Mobile App Review Analytics — Week 2 Challenge
 
 Analyze user reviews of mobile banking apps for three Ethiopian banks (CBE, BOA, Dashen Bank) to provide actionable insights for improving app experience and customer retention.
