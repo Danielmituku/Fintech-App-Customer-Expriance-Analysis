@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Fintech_App_Reviews"
+version = "0.1.0"
+description = "End-to-end pipeline for fintech app review analytics."
+authors = [
+    { name = "Tibebu K.", email = "wise.tibec@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+dependencies = [
+    # Core
+    "numpy",
+    "pandas",
+    "pyyaml",
+    "python-dateutil",
+
+    # Scraping
+    "google-play-scraper",
+
+    # Database
+    "sqlalchemy",
+    "psycopg2-binary",
+    "alembic",
+
+    # NLP / Sentiment
+    "nltk",
+    "spacy",
+    "transformers",
+
+    # Visualization / reporting
+    "matplotlib",
+    "seaborn",
+    "plotly",
+    "reportlab",
+
+    # Utilities
+    "python-dotenv",
+    # Language detetection
+    "langdetect"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+src_paths = ["src"]
+
+[tool.mypy]
+python_version = "3.14"
+ignore_missing_imports = true
+no_implicit_optional = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--cov=src --cov-report=term-missing"
