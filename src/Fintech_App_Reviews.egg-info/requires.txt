@@ -1,0 +1,15 @@
+numpy
+pandas
+pyyaml~=6.0.1
+python-dateutil~=2.8.2
+google-play-scraper
+sqlalchemy
+psycopg2-binary
+alembic
+nltk
+spacy
+matplotlib
+seaborn
+plotly
+reportlab
+python-dotenv
