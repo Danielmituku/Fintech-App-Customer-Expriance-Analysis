@@ -119,11 +119,78 @@ DB_PASSWORD=your_password
 
 ## Usage
 
-[To be updated as scripts are developed]
+### Task 1: Data Collection and Preprocessing
+
+1. **Find App IDs** (if not already known):
+   ```bash
+   python scripts/scraping/find_app_ids.py
+   ```
+   This will search for the bank apps and display their app IDs. Update `scripts/scraping/scrape_reviews.py` with the correct app IDs.
+
+2. **Run the complete Task 1 pipeline**:
+   ```bash
+   python scripts/run_task1.py
+   ```
+   This will:
+   - Scrape reviews from Google Play Store
+   - Preprocess and clean the data
+   - Save cleaned data to `data/processed/cleaned_reviews.csv`
+
+3. **Or run scripts individually**:
+   ```bash
+   # Scrape reviews
+   python scripts/scraping/scrape_reviews.py
+   
+   # Preprocess data
+   python scripts/preprocessing/preprocess_reviews.py
+   ```
 
 ## Methodology
 
-[To be updated with detailed methodology as work progresses]
+### Task 1: Data Collection and Preprocessing
+
+#### Web Scraping
+- **Tool**: `google-play-scraper` library
+- **Approach**: 
+  - Scrape reviews sorted by newest first
+  - Collect reviews in batches of 200 to handle rate limiting
+  - Target minimum 400 reviews per bank (1,200 total)
+  - Include rate limiting delays between requests to be respectful to Google Play Store
+- **Data Collected**:
+  - Review text
+  - Rating (1-5 stars)
+  - Review date
+  - Bank name
+  - App name
+  - Source (Google Play Store)
+  - Additional metadata (review ID, thumbs up count, reviewer name)
+
+#### Preprocessing Pipeline
+1. **Duplicate Removal**:
+   - Remove duplicates based on review text and bank name
+   - Remove duplicates based on review ID if available
+   
+2. **Missing Data Handling**:
+   - Remove rows with missing review text (critical field)
+   - Remove rows with missing bank name (critical field)
+   - Keep rows with missing ratings/dates for analysis
+   - Target: <5% missing data overall
+
+3. **Date Normalization**:
+   - Convert dates to datetime format
+   - Normalize to YYYY-MM-DD format
+   - Handle parsing errors gracefully
+
+4. **Data Export**:
+   - Save as CSV with columns: `review`, `rating`, `date`, `bank`, `source`
+   - UTF-8 encoding for international characters
+   - Preserve additional metadata columns
+
+#### Quality Assurance
+- Track missing data percentages
+- Verify review counts per bank
+- Check date ranges and rating distributions
+- Ensure data meets KPI requirements (<5% missing data, 1,200+ reviews)
 
 ## Progress Tracking
 
