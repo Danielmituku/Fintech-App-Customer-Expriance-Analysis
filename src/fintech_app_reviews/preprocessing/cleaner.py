@@ -1,9 +1,16 @@
 
 import logging
+import sys
+from pathlib import Path
 import pandas as pd
 import numpy as np
-# Assuming utils is correct
-from fintech_app_reviews.utils.text_utils import clean_text
+
+# Add project root to path for imports
+project_root = Path(__file__).parent.parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+from src.fintech_app_reviews.utils.text_utils import clean_text
 
 logger = logging.getLogger(__name__)
 

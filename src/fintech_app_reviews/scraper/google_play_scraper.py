@@ -5,20 +5,25 @@ from typing import List, Dict, Any, Optional
 from google_play_scraper import reviews, Sort
 import os
 import sys
+from pathlib import Path
+
+# Add project root to path for imports
+project_root = Path(__file__).parent.parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 # --- Configuration Loader Imports ---
-from fintech_app_reviews.config import load_config
-# from fintech_app_reviews.utils.text_utils import clean_text
+from src.fintech_app_reviews.config import load_config
+# from src.fintech_app_reviews.utils.text_utils import clean_text
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # --- Dynamic Path Calculation to Project Root ---
-current_dir = os.path.dirname(os.path.abspath(__file__))
-# Navigate up four levels to reach the project root
-PROJECT_ROOT = os.path.abspath(
-    os.path.join(current_dir, '..', '..', '..', '..'))
-CONFIG_FILE_PATH = os.path.join(PROJECT_ROOT, 'configs', 'scraper.yaml')
+current_dir = Path(__file__).parent
+# Navigate up three levels: scraper -> fintech_app_reviews -> src -> project_root
+PROJECT_ROOT = current_dir.parent.parent.parent
+CONFIG_FILE_PATH = PROJECT_ROOT / 'configs' / 'scraper.yaml'
 # --- End Path Calculation ---
 
 # Load configuration using the calculated path
