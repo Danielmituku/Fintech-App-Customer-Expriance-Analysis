@@ -617,12 +617,12 @@ def write_final_report(insights, recommendations, output_file="reports/final_rep
         f.write("- Survey user satisfaction post-implementation\n\n")
         
         f.write("---\n\n")
-        f.write("**Report Generated:** December 2025  
-**Data Source:** Google Play Store Reviews  
-**Analysis Period:** Recent reviews (newest first)  
-**Total Reviews:** 1,167  
-**Banks Analyzed:** 3 (CBE, BOA, Dashen)  
-**Report Version:** 1.0\n\n")
+        f.write("**Report Generated:** December 2025\n")
+        f.write("**Data Source:** Google Play Store Reviews\n")
+        f.write("**Analysis Period:** Recent reviews (newest first)\n")
+        f.write("**Total Reviews:** 1,167\n")
+        f.write("**Banks Analyzed:** 3 (CBE, BOA, Dashen)\n")
+        f.write("**Report Version:** 1.0\n\n")
     
     logger.info(f"✓ Final report written to {output_file}")
 
