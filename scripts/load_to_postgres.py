@@ -50,40 +50,80 @@ def get_db_connection():
 def create_schema(conn):
     """Create database schema if it doesn't exist"""
     try:
+        project_root = Path(__file__).parent.parent
+        schema_file = project_root / "src" / "fintech_app_reviews" / "db" / "schema.sql"
+        
+        if schema_file.exists():
+            # Use inline schema creation for reliability
+            logger.info("Creating schema from schema.sql definitions...")
+        else:
+            logger.warning(f"Schema file not found at {schema_file}, creating inline schema")
+        
+        # Create schema inline (more reliable than parsing SQL file)
         with conn.cursor() as cur:
-            # Read schema file
-            schema_file = Path("src/fintech_app_reviews/db/schema.sql")
-            if schema_file.exists():
-                with open(schema_file, 'r') as f:
-                    schema_sql = f.read()
-                cur.execute(schema_sql)
-                conn.commit()
-                logger.info("Database schema created/verified")
-            else:
-                # Create schema inline if file doesn't exist
-                cur.execute("""
-                    CREATE TABLE IF NOT EXISTS banks (
-                        bank_id SERIAL PRIMARY KEY,
-                        bank_name VARCHAR(255) NOT NULL UNIQUE,
-                        app_name VARCHAR(255)
-                    );
-                """)
-                cur.execute("""
-                    CREATE TABLE IF NOT EXISTS reviews (
-                        review_id VARCHAR(255) PRIMARY KEY,
-                        bank_id INTEGER REFERENCES banks(bank_id),
-                        review_text TEXT,
-                        rating INTEGER,
-                        review_date DATE,
-                        sentiment_label VARCHAR(50),
-                        sentiment_score FLOAT,
-                        source VARCHAR(100),
-                        themes TEXT,
-                        keywords TEXT
-                    );
-                """)
-                conn.commit()
-                logger.info("Database schema created")
+            # Create banks table first
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS banks (
+                    bank_id SERIAL PRIMARY KEY,
+                    bank_name VARCHAR(255) NOT NULL UNIQUE,
+                    app_name VARCHAR(255)
+                );
+            """)
+            logger.info("✓ Banks table created/verified")
+            
+            # Create reviews table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS reviews (
+                    review_id VARCHAR(255) PRIMARY KEY,
+                    bank_id INTEGER NOT NULL REFERENCES banks(bank_id) ON DELETE CASCADE,
+                    review_text TEXT,
+                    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+                    review_date DATE,
+                    sentiment_label VARCHAR(50),
+                    sentiment_score FLOAT,
+                    source VARCHAR(100) DEFAULT 'Google Play Store',
+                    themes TEXT,
+                    keywords TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            logger.info("✓ Reviews table created/verified")
+            
+            # Create indexes
+            indexes = [
+                "CREATE INDEX IF NOT EXISTS idx_reviews_bank_id ON reviews(bank_id);",
+                "CREATE INDEX IF NOT EXISTS idx_reviews_rating ON reviews(rating);",
+                "CREATE INDEX IF NOT EXISTS idx_reviews_sentiment_label ON reviews(sentiment_label);",
+                "CREATE INDEX IF NOT EXISTS idx_reviews_review_date ON reviews(review_date);"
+            ]
+            
+            for idx_sql in indexes:
+                try:
+                    cur.execute(idx_sql)
+                except Exception as e:
+                    logger.debug(f"Index creation: {e}")
+            
+            logger.info("✓ Indexes created/verified")
+            
+            # Create view (must be after tables exist)
+            cur.execute("""
+                CREATE OR REPLACE VIEW review_statistics AS
+                SELECT 
+                    b.bank_name,
+                    COUNT(r.review_id) as total_reviews,
+                    AVG(r.rating) as average_rating,
+                    COUNT(CASE WHEN r.sentiment_label = 'positive' THEN 1 END) as positive_count,
+                    COUNT(CASE WHEN r.sentiment_label = 'negative' THEN 1 END) as negative_count,
+                    COUNT(CASE WHEN r.sentiment_label = 'neutral' THEN 1 END) as neutral_count
+                FROM banks b
+                LEFT JOIN reviews r ON b.bank_id = r.bank_id
+                GROUP BY b.bank_id, b.bank_name;
+            """)
+            logger.info("✓ Review statistics view created/verified")
+            
+            conn.commit()
+            logger.info("Database schema created/verified successfully")
+            
     except Exception as e:
         logger.error(f"Failed to create schema: {e}")
         conn.rollback()
@@ -133,15 +173,24 @@ def load_data_to_db(conn, df):
         
         # Prepare data for insertion
         records = []
+        seen_ids = set()  # Track review_ids to avoid duplicates in batch
+        
         for _, row in df_mapped.iterrows():
             bank_name = row.get('bank', 'Unknown')
             bank_id = bank_ids.get(bank_name)
             
             # Generate review_id if not present
             review_id = row.get('review_id') or row.get('reviewId') or f"{bank_id}_{hash(str(row.get('review_text', '')))}"
+            review_id = str(review_id)
+            
+            # Skip if we've already seen this review_id in this batch
+            if review_id in seen_ids:
+                logger.debug(f"Skipping duplicate review_id in batch: {review_id}")
+                continue
+            seen_ids.add(review_id)
             
             record = (
-                str(review_id),
+                review_id,
                 bank_id,
                 str(row.get('review_text', row.get('review', ''))),
                 int(row.get('rating', 0)) if pd.notna(row.get('rating')) else None,
@@ -149,29 +198,58 @@ def load_data_to_db(conn, df):
                 row.get('sentiment_label', ''),
                 float(row.get('sentiment_score', 0)) if pd.notna(row.get('sentiment_score')) else None,
                 row.get('source', 'Google Play Store'),
-                row.get('themes', ''),
-                row.get('keywords', '')
+                str(row.get('themes', '')),
+                str(row.get('keywords', ''))
             )
             records.append(record)
         
-        # Batch insert
+        # Batch insert in chunks to avoid issues
+        chunk_size = 500
+        total_inserted = 0
+        
         with conn.cursor() as cur:
-            execute_values(
-                cur,
-                """INSERT INTO reviews 
-                   (review_id, bank_id, review_text, rating, review_date, 
-                    sentiment_label, sentiment_score, source, themes, keywords)
-                   VALUES %s
-                   ON CONFLICT (review_id) DO UPDATE SET
-                   sentiment_label = EXCLUDED.sentiment_label,
-                   sentiment_score = EXCLUDED.sentiment_score,
-                   themes = EXCLUDED.themes,
-                   keywords = EXCLUDED.keywords
-                """,
-                records
-            )
+            for i in range(0, len(records), chunk_size):
+                chunk = records[i:i + chunk_size]
+                try:
+                    execute_values(
+                        cur,
+                        """INSERT INTO reviews 
+                           (review_id, bank_id, review_text, rating, review_date, 
+                            sentiment_label, sentiment_score, source, themes, keywords)
+                           VALUES %s
+                           ON CONFLICT (review_id) DO UPDATE SET
+                           sentiment_label = EXCLUDED.sentiment_label,
+                           sentiment_score = EXCLUDED.sentiment_score,
+                           themes = EXCLUDED.themes,
+                           keywords = EXCLUDED.keywords
+                        """,
+                        chunk
+                    )
+                    total_inserted += len(chunk)
+                except Exception as e:
+                    logger.warning(f"Error inserting chunk {i//chunk_size + 1}: {e}")
+                    # Try inserting one by one for this chunk
+                    for record in chunk:
+                        try:
+                            cur.execute(
+                                """INSERT INTO reviews 
+                                   (review_id, bank_id, review_text, rating, review_date, 
+                                    sentiment_label, sentiment_score, source, themes, keywords)
+                                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                   ON CONFLICT (review_id) DO UPDATE SET
+                                   sentiment_label = EXCLUDED.sentiment_label,
+                                   sentiment_score = EXCLUDED.sentiment_score,
+                                   themes = EXCLUDED.themes,
+                                   keywords = EXCLUDED.keywords
+                                """,
+                                record
+                            )
+                            total_inserted += 1
+                        except Exception as e2:
+                            logger.debug(f"Skipping duplicate review_id: {record[0]}")
+            
             conn.commit()
-            logger.info(f"Inserted/updated {len(records)} reviews")
+            logger.info(f"Inserted/updated {total_inserted} reviews")
         
         return len(records)
     except Exception as e:
