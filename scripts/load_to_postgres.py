@@ -52,14 +52,21 @@ def create_schema(conn):
     try:
         with conn.cursor() as cur:
             # Read schema file
-            schema_file = Path("src/fintech_app_reviews/db/schema.sql")
+            project_root = Path(__file__).parent.parent
+            schema_file = project_root / "src" / "fintech_app_reviews" / "db" / "schema.sql"
+            
             if schema_file.exists():
                 with open(schema_file, 'r') as f:
                     schema_sql = f.read()
-                cur.execute(schema_sql)
+                # Execute each statement separately (psycopg2 doesn't support multi-statement execution by default)
+                statements = [s.strip() for s in schema_sql.split(';') if s.strip() and not s.strip().startswith('--')]
+                for statement in statements:
+                    if statement:
+                        cur.execute(statement)
                 conn.commit()
-                logger.info("Database schema created/verified")
+                logger.info("Database schema created/verified from schema.sql")
             else:
+                logger.warning(f"Schema file not found at {schema_file}, creating inline schema")
                 # Create schema inline if file doesn't exist
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS banks (
@@ -73,17 +80,17 @@ def create_schema(conn):
                         review_id VARCHAR(255) PRIMARY KEY,
                         bank_id INTEGER REFERENCES banks(bank_id),
                         review_text TEXT,
-                        rating INTEGER,
+                        rating INTEGER CHECK (rating >= 1 AND rating <= 5),
                         review_date DATE,
                         sentiment_label VARCHAR(50),
                         sentiment_score FLOAT,
-                        source VARCHAR(100),
+                        source VARCHAR(100) DEFAULT 'Google Play Store',
                         themes TEXT,
                         keywords TEXT
                     );
                 """)
                 conn.commit()
-                logger.info("Database schema created")
+                logger.info("Database schema created inline")
     except Exception as e:
         logger.error(f"Failed to create schema: {e}")
         conn.rollback()

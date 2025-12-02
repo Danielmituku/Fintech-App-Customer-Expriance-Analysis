@@ -6,9 +6,9 @@
 postgres:
   host: "localhost"
   port: 5432
-  database: "fintech_reviews"
+  database: "bank_reviews"  # Task 3 requirement: database named bank_reviews
   user: "postgres"
-  password: "postgres"
+  password: "postgres"  # Update with your PostgreSQL password
   schema: "public"
 
   # Connection pool
