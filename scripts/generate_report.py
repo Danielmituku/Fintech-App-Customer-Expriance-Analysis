@@ -325,11 +325,11 @@ def write_final_report(insights, recommendations, output_file="reports/final_rep
     with open(output_file, 'w') as f:
         # Title Page
         f.write("# Fintech App Customer Experience Analysis - Final Report\n\n")
-        f.write("**Project:** Customer Experience Analytics for Fintech Apps  
-**Banks Analyzed:** Commercial Bank of Ethiopia (CBE), Bank of Abyssinia (BOA), Dashen Bank  
-**Date:** December 2025  
-**Total Reviews Analyzed:** 1,167  
-**Analysis Period:** Recent reviews from Google Play Store\n\n")
+        f.write("**Project:** Customer Experience Analytics for Fintech Apps\n")
+        f.write("**Banks Analyzed:** Commercial Bank of Ethiopia (CBE), Bank of Abyssinia (BOA), Dashen Bank\n")
+        f.write("**Date:** December 2025\n")
+        f.write("**Total Reviews Analyzed:** 1,167\n")
+        f.write("**Analysis Period:** Recent reviews from Google Play Store\n\n")
         
         f.write("---\n\n")
         f.write("## Table of Contents\n\n")
