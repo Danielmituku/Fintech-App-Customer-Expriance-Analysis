@@ -58,8 +58,10 @@ def identify_drivers_and_pain_points(df):
         # Extract common themes/keywords from positive reviews
         drivers = []
         if themes_col in positive_reviews.columns:
-            theme_counts = positive_reviews[themes_col].str.split('|').explode().value_counts()
+            themes_series = positive_reviews[themes_col].fillna('').astype(str)
+            theme_counts = themes_series.str.split('|').explode().value_counts()
             drivers = theme_counts.head(3).index.tolist()
+            drivers = [d for d in drivers if d and d.strip()]  # Remove empty strings
         
         # Pain points: Low ratings (1-2 stars) with negative sentiment
         low_rated = bank_df[bank_df[rating_col] <= 2]
@@ -67,8 +69,10 @@ def identify_drivers_and_pain_points(df):
         
         pain_points = []
         if themes_col in negative_reviews.columns:
-            theme_counts = negative_reviews[themes_col].str.split('|').explode().value_counts()
+            themes_series = negative_reviews[themes_col].fillna('').astype(str)
+            theme_counts = themes_series.str.split('|').explode().value_counts()
             pain_points = theme_counts.head(3).index.tolist()
+            pain_points = [p for p in pain_points if p and p.strip()]  # Remove empty strings
         
         results[bank] = {
             'drivers': drivers,
@@ -151,7 +155,8 @@ def create_visualizations(df, output_dir="reports"):
             theme_data = []
             for bank in df[bank_col].unique():
                 bank_df = df[df[bank_col] == bank]
-                themes = bank_df['themes'].str.split('|').explode()
+                themes_series = bank_df['themes'].fillna('').astype(str)
+                themes = themes_series.str.split('|').explode()
                 theme_counts = themes.value_counts().head(5)
                 for theme, count in theme_counts.items():
                     if theme and theme.strip():
