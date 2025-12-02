@@ -29,20 +29,21 @@ def get_db_connection():
     """Get PostgreSQL database connection from config"""
     try:
         config = load_config("configs/db.yaml")
-        db_config = config.get("database", {})
+        db_config = config.get("postgres", {})
         
         conn = psycopg2.connect(
             host=db_config.get("host", "localhost"),
             port=db_config.get("port", 5432),
-            database=db_config.get("name", "bank_reviews"),
+            database=db_config.get("database", "bank_reviews"),
             user=db_config.get("user", "postgres"),
-            password=db_config.get("password", "")
+            password=db_config.get("password", "postgres")
         )
         logger.info("Connected to PostgreSQL database")
         return conn
     except Exception as e:
         logger.error(f"Failed to connect to database: {e}")
-        logger.info("Make sure PostgreSQL is running and database 'bank_reviews' exists")
+        logger.info("Make sure PostgreSQL is running and database exists")
+        logger.info("Update configs/db.yaml with your database credentials")
         raise
 
 
