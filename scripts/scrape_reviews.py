@@ -27,7 +27,11 @@ def run_scraper_pipeline() -> pd.DataFrame | None:
     Orchestrates the scraping process for multiple apps defined in the configuration.
     Returns the DataFrame if saved/created, otherwise None.
     """
-    config = load_config()
+    # Get project root and config path
+    project_root = Path(__file__).parent.parent
+    config_path = project_root / "configs" / "scraper.yaml"
+    
+    config = load_config(path=str(config_path))
     if not config:
         logger.error(
             "Failed to load configuration. Exiting scraping pipeline.")
@@ -66,7 +70,6 @@ def run_scraper_pipeline() -> pd.DataFrame | None:
                     app_id_to_bank=bank_mapping,
                     max_reviews=max_per_app,
                     sort_by=sort_by,
-                    timeout=network_timeout,
                 )
                 if not reviews:
                     logger.info(

@@ -20,11 +20,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # --- Dynamic Path Calculation to Project Root ---
-current_dir = os.path.dirname(os.path.abspath(__file__))
-# Navigate up four levels to reach the project root
-PROJECT_ROOT = os.path.abspath(
-    os.path.join(current_dir, '..', '..', '..', '..'))
-CONFIG_FILE_PATH = os.path.join(PROJECT_ROOT, 'configs', 'scraper.yaml')
+current_dir = Path(__file__).parent
+# Navigate up three levels: scraper -> fintech_app_reviews -> src -> project_root
+PROJECT_ROOT = current_dir.parent.parent.parent
+CONFIG_FILE_PATH = PROJECT_ROOT / 'configs' / 'scraper.yaml'
 # --- End Path Calculation ---
 
 # Load configuration using the calculated path

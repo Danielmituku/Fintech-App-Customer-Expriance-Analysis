@@ -35,7 +35,11 @@ def run_cleaning_pipeline() -> None:
     selects final columns and writes `interim_path/interim_reviews.csv`.
     """
 
-    config = load_config()
+    # Get project root and config path
+    project_root = Path(__file__).parent.parent
+    config_path = project_root / "configs" / "scraper.yaml"
+    
+    config = load_config(path=str(config_path))
     if not config:
         logger.error(
             "Failed to load configuration. Exiting cleaning pipeline.")
