@@ -5,10 +5,16 @@ from typing import List, Dict, Any, Optional
 from google_play_scraper import reviews, Sort
 import os
 import sys
+from pathlib import Path
+
+# Add project root to path for imports
+project_root = Path(__file__).parent.parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 # --- Configuration Loader Imports ---
-from fintech_app_reviews.config import load_config
-# from fintech_app_reviews.utils.text_utils import clean_text
+from src.fintech_app_reviews.config import load_config
+# from src.fintech_app_reviews.utils.text_utils import clean_text
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
