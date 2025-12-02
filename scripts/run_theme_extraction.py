@@ -10,9 +10,13 @@ import logging
 import os
 import pandas as pd
 
-from fintech_app_reviews.config import load_config
-from fintech_app_reviews.nlp.keywords import extract_tfidf_keywords_per_group, attach_top_keywords_to_df
-from fintech_app_reviews.nlp.themes import map_keywords_to_themes
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from src.fintech_app_reviews.config import load_config
+from src.fintech_app_reviews.nlp.keywords import extract_tfidf_keywords_per_group, attach_top_keywords_to_df
+from src.fintech_app_reviews.nlp.themes import map_keywords_to_themes
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -34,13 +38,19 @@ def run_theme_extraction(config_path="configs/nlp.yaml",
         return
 
     # 1) Extract keywords per bank
+    # Map column names if needed
+    text_col = "review_text" if "review_text" in df.columns else "review"
+    group_col = "bank" if "bank" in df.columns else "bank_name"
+    
     try:
-        groups = extract_tfidf_keywords_per_group(df, text_col="review_text", group_col="bank", top_n=50, ngram_range=(1,2))
+        groups = extract_tfidf_keywords_per_group(df, text_col=text_col, group_col=group_col, top_n=50, ngram_range=(1,2))
         global_keywords = []
         for kws in groups.values():
             global_keywords.extend(kws[:30])
         global_keywords = list(dict.fromkeys(global_keywords))
-        df = attach_top_keywords_to_df(df, text_col="review_text", top_k=5, global_tfidf=global_keywords)
+        # Map column name if needed
+        text_col = "review_text" if "review_text" in df.columns else "review"
+        df, _ = attach_top_keywords_to_df(df, text_col=text_col, top_k=5, global_tfidf=global_keywords)
         logger.info("Keywords extraction complete")
     except Exception as e:
         logger.exception("Keyword extraction failed: %s", e)
