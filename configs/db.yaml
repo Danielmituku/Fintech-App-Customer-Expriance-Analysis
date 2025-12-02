@@ -8,7 +8,7 @@ postgres:
   port: 5432
   database: "bank_reviews"  # Task 3 requirement: database named bank_reviews
   user: "postgres"
-  password: "postgres"  # Update with your PostgreSQL password
+  password: ""  # Empty for trust auth, or set your password here
   schema: "public"
 
   # Connection pool
